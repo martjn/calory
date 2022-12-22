@@ -1,7 +1,7 @@
 // Storage Controller
 
 // Item Controller
-// yoyoyo
+// yoyo
 const ItemCtrl = (function() {
     // Item Constructor
     const Item = function(id, name, calories){
