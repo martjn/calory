@@ -101,22 +101,41 @@ const UICtrl = (function(){
         itemNameInput: '#item-name',
         itemCaloriesInput: '#item-calories',
         addBtn: '.add-btn',
+        updateBtn: '.update-btn',
+        editBtn: '.edit-item',
         totalCalories: '.total-calories'
     }
     return {
+        showAddButton: function(){
+            document.querySelector(UISelectors.addBtn).style.display = "inline";
+            document.querySelector(UISelectors.updateBtn).style.display = "none";
+            console.log('Showing add button' + document.activeElement);
+        },
+        showUpdateButton: function(){
+            document.querySelector(UISelectors.addBtn).style.display = "none";
+            document.querySelector(UISelectors.updateBtn).style.display = "inline";
+            console.log('Showing update button' + document.activeElement);
+        },
         populateItemList: function(items) {
             //create html content
             let html = '';
-
             // parse data and create list items html
             items.forEach(function(item){
                 html += `<li class="collection-item" id="item-${item.id}"><strong>${item.name}: </strong> <em>${item.calories} Calories</em>
-                <a href="#" class=secondary-content">
-                <i class="edit item fa fa-pencil"></i>
-                </a></li>`;
+                <a href="#" class="secondary-content">
+                    <i class="edit-item fa fa-pencil"></i>
+                </a></li>`;          
             });
             // insert list items
             document.querySelector(UISelectors.itemList).innerHTML = html;
+            // add event listeners to every food item
+            items.forEach(function(item){
+                const el = document.getElementById(`item-${item.id}`);
+                el.getElementsByClassName('edit-item')[0].addEventListener('click', function(){
+                    UICtrl.showUpdateButton();
+                    console.log('clicked ' + `item-${item.id}`);
+                })
+            })
         },
         getSelectors: function(){
             return UISelectors;
@@ -143,7 +162,12 @@ const UICtrl = (function(){
             </a>`;
             // insert item
             document.querySelector(UISelectors.itemList).insertAdjacentElement('beforeend', li)
-
+            // add event
+            const el = document.getElementById(`item-${item.id}`);
+            el.getElementsByClassName('edit-item')[0].addEventListener('click', function(){
+                UICtrl.showUpdateButton();
+                console.log('clicked ' + `item-${item.id}`);
+            })
         },
         clearInput: function(){
             document.querySelector(UISelectors.itemNameInput).value = '';
@@ -151,7 +175,9 @@ const UICtrl = (function(){
         },
         showTotalCalories: function(totalCalories){
             document.querySelector(UISelectors.totalCalories).textContent = totalCalories;
-        }
+        },
+
+
     }
 })();
 
@@ -161,11 +187,10 @@ const App = (function(ItemCtrl, StorageCtrl, UICtrl) {
     const loadEventListeners = function() {
         // get ui selectors
         const UISelectors = UICtrl.getSelectors();
-        console.log(UISelectors);
         // add item event
         document.querySelector(UISelectors.addBtn).addEventListener('click', itemAddSubmit);
         // add document reload event
-        document.addEventListener('DOMContentLoaded', getItemsFromStorage)
+        document.addEventListener('DOMContentLoaded', getItemsFromStorage);
     }
 
     const itemAddSubmit = function(event){
@@ -211,6 +236,8 @@ const App = (function(ItemCtrl, StorageCtrl, UICtrl) {
             UICtrl.populateItemList(items)
             // load event listeners
             loadEventListeners();
+            // show add meal button by default
+            UICtrl.showAddButton();
         }
     }
 })(ItemCtrl, StorageCtrl, UICtrl);
