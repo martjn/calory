@@ -44,6 +44,12 @@ const StorageCtrl = (function(){
             // reset ls
             localStorage.setItem('items', JSON.stringify(items));
         },
+        deleteAllItems: function(){
+            items = JSON.parse(localStorage.getItem('items'));
+            items = [];
+            // reset ls
+            localStorage.setItem('items', JSON.stringify(items));
+        },
         getItemsFromStorage: function(){
             let items;
             if(localStorage.getItem('items') === null){
@@ -119,6 +125,9 @@ const ItemCtrl = (function() {
                 }
             })
         },
+        deleteAllItems: function(){
+            data.items = [];
+        },
         getTotalCalories: function() {
             let total = 0;
             // loop through items and add calories
@@ -135,8 +144,6 @@ const ItemCtrl = (function() {
             return data
         }
     }
-
-
 })();
 
 // UI Controller
@@ -150,6 +157,8 @@ const UICtrl = (function(){
         updateBtn: '.update-btn',
         editBtn: '.edit-item',
         deleteBtn: '.delete-btn',
+        clearBtn: '.clear-btn',
+        backBtn: '.back-btn',
         totalCalories: '.total-calories'
     }
     return {
@@ -211,12 +220,14 @@ const UICtrl = (function(){
             document.querySelector(UISelectors.addBtn).style.display = "inline";
             document.querySelector(UISelectors.deleteBtn).style.display = "none";
             document.querySelector(UISelectors.updateBtn).style.display = "none";
+            document.querySelector(UISelectors.backBtn).style.display = "none";
             console.log('show add btn');
         },
         showUpdateButton: function(){
             document.querySelector(UISelectors.addBtn).style.display = "none";
             document.querySelector(UISelectors.deleteBtn).style.display = "inline";
             document.querySelector(UISelectors.updateBtn).style.display = "inline";
+            document.querySelector(UISelectors.backBtn).style.display = "inline";
             console.log('Show update btn');
         },
         setInputValue: function(id){
@@ -224,6 +235,11 @@ const UICtrl = (function(){
             document.querySelector(UISelectors.itemNameInput).value = ItemCtrl.getItems()[id].name;
             document.querySelector(UISelectors.itemCaloriesInput).value = ItemCtrl.getItems()[id].calories;
             currentItem = ItemCtrl.setCurrentItem(id);
+        },
+        goBack: function(){
+            UICtrl.showAddButton();
+            UICtrl.clearInput();
+            ItemCtrl.setCurrentItem(null);
         },
         clearInput: function(){
             document.querySelector(UISelectors.itemNameInput).value = '';
@@ -249,6 +265,10 @@ const App = (function(ItemCtrl, StorageCtrl, UICtrl) {
         document.querySelector(UISelectors.updateBtn).addEventListener('click', itemUpdateSubmit);        
         // add delete event
         document.querySelector(UISelectors.deleteBtn).addEventListener('click', itemDeleteSubmit);        
+        // add delete all event
+        document.querySelector(UISelectors.clearBtn).addEventListener('click', itemDeleteAll);        
+        // add back event
+        document.querySelector(UISelectors.backBtn).addEventListener('click', UICtrl.goBack);        
         // add document reload event
         document.addEventListener('DOMContentLoaded', getItemsFromStorage);
     }
@@ -319,6 +339,26 @@ const App = (function(ItemCtrl, StorageCtrl, UICtrl) {
         const items = ItemCtrl.getItems();
         UICtrl.populateItemList(items);
 
+        event.preventDefault()     
+    }
+    const itemDeleteAll = function(event){
+        // delete all items from items list
+        ItemCtrl.deleteAllItems();
+        // delete all items from local storage
+        StorageCtrl.deleteAllItems();
+        // get total calories
+        const totalCalories = ItemCtrl.getTotalCalories();
+        // add total calories to UI
+        UICtrl.showTotalCalories(totalCalories);
+        // clear fields
+        UICtrl.clearInput();
+        // set current item to null
+        ItemCtrl.setCurrentItem(null);
+        // show add btn
+        UICtrl.showAddButton();
+        // refresh item list
+        UICtrl.populateItemList(items);
+        console.log('CLEAR ALL');
         event.preventDefault()     
     }
     // get items from storage
