@@ -19,6 +19,16 @@ const StorageCtrl = (function(){
                 localStorage.setItem('items', JSON.stringify(items));
             }
         },
+        storeExistingItem: function(id, new_name, new_calories){
+            let items;
+            // get what is already in ls
+            items = JSON.parse(localStorage.getItem('items'));
+            // update item
+            items[id]['name'] = new_name;
+            items[id]['calories'] = new_calories;
+            // reset ls
+            localStorage.setItem('items', JSON.stringify(items));
+        },
         getItemsFromStorage: function(){
             let items;
             if(localStorage.getItem('items') === null){
@@ -47,12 +57,19 @@ const ItemCtrl = (function() {
             //{id: 1, name: 'Riis', calories: 250},
             //{id: 2, name: 'Hapukapsas', calories: 400}
         ],
-        total: 0
+        total: 0,
+        currentItem: null
     }
 
     return {
         getItems: function(){
             return data.items
+        },
+        getCurrentItem: function(){
+            return data.currentItem;
+        },
+        setCurrentItem: function(item){
+            data.currentItem = item;
         },
         addItem: function(name, calories){
             let ID;
@@ -72,6 +89,10 @@ const ItemCtrl = (function() {
             data.items.push(newItem);
             // return new item
             return newItem
+        },
+        editItem: function(id, new_name, new_calories){
+            data.items[id].name = new_name;
+            data.items[id].calories = parseInt(new_calories);
         },
         getTotalCalories: function() {
             let total = 0;
@@ -106,16 +127,6 @@ const UICtrl = (function(){
         totalCalories: '.total-calories'
     }
     return {
-        showAddButton: function(){
-            document.querySelector(UISelectors.addBtn).style.display = "inline";
-            document.querySelector(UISelectors.updateBtn).style.display = "none";
-            console.log('Showing add button' + document.activeElement);
-        },
-        showUpdateButton: function(){
-            document.querySelector(UISelectors.addBtn).style.display = "none";
-            document.querySelector(UISelectors.updateBtn).style.display = "inline";
-            console.log('Showing update button' + document.activeElement);
-        },
         populateItemList: function(items) {
             //create html content
             let html = '';
@@ -133,6 +144,7 @@ const UICtrl = (function(){
                 const el = document.getElementById(`item-${item.id}`);
                 el.getElementsByClassName('edit-item')[0].addEventListener('click', function(){
                     UICtrl.showUpdateButton();
+                    UICtrl.setInputValue(item.id);
                     console.log('clicked ' + `item-${item.id}`);
                 })
             })
@@ -146,7 +158,6 @@ const UICtrl = (function(){
                 calories: document.querySelector(UISelectors.itemCaloriesInput).value
             }
         },
-
         addListItem: function(item){
             // create li element
             const li = document.createElement('li');
@@ -166,8 +177,25 @@ const UICtrl = (function(){
             const el = document.getElementById(`item-${item.id}`);
             el.getElementsByClassName('edit-item')[0].addEventListener('click', function(){
                 UICtrl.showUpdateButton();
+                UICtrl.setInputValue(item.id);
                 console.log('clicked ' + `item-${item.id}`);
             })
+        },
+        showAddButton: function(){
+            document.querySelector(UISelectors.addBtn).style.display = "inline";
+            document.querySelector(UISelectors.updateBtn).style.display = "none";
+            console.log('show add btn');
+        },
+        showUpdateButton: function(){
+            document.querySelector(UISelectors.addBtn).style.display = "none";
+            document.querySelector(UISelectors.updateBtn).style.display = "inline";
+            console.log('Show update btn');
+        },
+        setInputValue: function(id){
+            // use selected item values in input fields
+            document.querySelector(UISelectors.itemNameInput).value = ItemCtrl.getItems()[id].name;
+            document.querySelector(UISelectors.itemCaloriesInput).value = ItemCtrl.getItems()[id].calories;
+            currentItem = ItemCtrl.setCurrentItem(id);
         },
         clearInput: function(){
             document.querySelector(UISelectors.itemNameInput).value = '';
@@ -189,10 +217,11 @@ const App = (function(ItemCtrl, StorageCtrl, UICtrl) {
         const UISelectors = UICtrl.getSelectors();
         // add item event
         document.querySelector(UISelectors.addBtn).addEventListener('click', itemAddSubmit);
+        // add update event
+        document.querySelector(UISelectors.updateBtn).addEventListener('click', itemUpdateSubmit);        
         // add document reload event
         document.addEventListener('DOMContentLoaded', getItemsFromStorage);
     }
-
     const itemAddSubmit = function(event){
         // get form input from UI Controller
         const input = UICtrl.getItemInput();
@@ -211,6 +240,33 @@ const App = (function(ItemCtrl, StorageCtrl, UICtrl) {
             UICtrl.clearInput();
         }
         event.preventDefault()
+    }
+    const itemUpdateSubmit = function(event){
+        // get form input from UI Controller
+        const input = UICtrl.getItemInput();
+        // check for name and calorie input
+        if(input.name !== '' && input.calories !== ''){
+            // get currentItem ID from items data
+            const currentItem = ItemCtrl.getCurrentItem();
+            // update item in items list
+            ItemCtrl.editItem(currentItem, input.name, input.calories);
+            // get total calories
+            const totalCalories = ItemCtrl.getTotalCalories();
+            // add total calories to UI
+            UICtrl.showTotalCalories(totalCalories);
+            //store in localStorage
+            StorageCtrl.storeExistingItem(currentItem, input.name, input.calories);
+            // clear fields
+            UICtrl.clearInput();
+            // set current item to null
+            ItemCtrl.setCurrentItem(null);
+            // show add btn
+            UICtrl.showAddButton();
+            // refresh item list
+            const items = ItemCtrl.getItems();
+            UICtrl.populateItemList(items);
+        }
+        event.preventDefault()     
     }
     // get items from storage
     const getItemsFromStorage = function(){
